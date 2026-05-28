@@ -382,13 +382,11 @@ function AITab({ rows, headers }) {
     const systemPrompt = `You are an AI analyst embedded in the Smart Records Hub — a school records consolidation tool. You help school administrators analyze student, staff, and compliance data. You are direct, concise, and highlight actionable findings. When analyzing data: flag compliance gaps, surface at-risk patterns, and note any FERPA-relevant concerns. Data health score: ${avgHealth}%.`;
 
     try {
-      const res = await fetch("/.netlify/functions/analyze", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
           system: systemPrompt,
           messages: [
@@ -444,52 +442,44 @@ function AITab({ rows, headers }) {
         </div>
       </div>
 
-      {/* Right: Chat */}
+      {/* Right: Chat — DEMO GATE */}
+      {/* AI analysis is disabled on the public preview instance. The Data Health Score
+          above runs entirely on client-side sample data. To run AI queries against
+          your own records, request a custom deployment via the link below. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ background: C.cardBg, border: `1px solid ${C.accentLight}`, borderRadius: 12, padding: "14px", flex: 1, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontWeight: 700, color: C.textPrimary, fontSize: 14, marginBottom: 10 }}>🤖 AI Analyzer</div>
-
-          {/* Quick prompts */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-            {QUICK_PROMPTS.map(q => (
-              <button key={q} onClick={() => sendMessage(q)}
-                style={{ padding: "4px 10px", borderRadius: 99, fontSize: 11, background: "#eff6ff", color: "#1e40af", border: "1px solid #bfdbfe", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-                {q}
-              </button>
-            ))}
+        <div style={{
+          background: C.cardBg, border: `1px solid ${C.accentLight}`,
+          borderRadius: 12, padding: "24px 20px", flex: 1,
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+          <div style={{ fontWeight: 700, color: C.textPrimary, fontSize: 15, marginBottom: 10 }}>
+            AI Analyzer is disabled in this demo
           </div>
-
-          {/* Chat history */}
-          <div ref={chatRef} style={{ flex: 1, minHeight: 180, maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, marginBottom: 10, paddingRight: 4 }}>
-            {messages.length === 0 && (
-              <div style={{ color: C.textSec, fontSize: 13, textAlign: "center", padding: "24px 0" }}>
-                {rows.length ? "Ask anything about your school records ↑" : "Load data files first, then ask questions."}
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} style={{
-                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                maxWidth: "85%", padding: "9px 13px", borderRadius: 10, fontSize: 13, lineHeight: 1.55,
-                background: m.role === "user" ? C.accent : "#f8faff",
-                color: m.role === "user" ? C.white : C.textPrimary,
-                border: m.role === "user" ? "none" : `1px solid ${C.accentLight}`,
-              }}>{m.content}</div>
-            ))}
-            {loading && (
-              <div style={{ alignSelf: "flex-start", padding: "9px 13px", borderRadius: 10, background: "#f8faff", border: `1px solid ${C.accentLight}`, color: C.textSec, fontSize: 13 }}>Analyzing…</div>
-            )}
+          <div style={{ color: C.textSec, fontSize: 13, lineHeight: 1.7, maxWidth: 320, marginBottom: 20 }}>
+            This is a public preview instance. The AI Analyzer — which queries your
+            records for compliance gaps, at-risk patterns, and FERPA concerns — is
+            available in custom deployments only.
           </div>
-
-          {/* Input */}
-          <div style={{ display: "flex", gap: 8 }}>
-            <input value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-              placeholder="Ask about your data..."
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${C.accentLight}`, fontSize: 13, fontFamily: "inherit", outline: "none", color: C.textPrimary }} />
-            <button onClick={() => sendMessage(input)} disabled={loading || !input.trim()}
-              style={{ padding: "8px 16px", borderRadius: 8, background: loading || !input.trim() ? "#93c5fd" : C.accent, color: C.white, border: "none", cursor: loading ? "wait" : "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit" }}>
-              Analyze
-            </button>
+          <div style={{ color: C.textSec, fontSize: 13, lineHeight: 1.7, maxWidth: 320, marginBottom: 24 }}>
+            In your own deployment, your data never leaves your environment. Only a
+            capped 40-row sample is sent to the AI — never the full dataset.
+          </div>
+          <a
+            href="https://rocklinconsult.netlify.app/#contact"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-block", padding: "10px 22px", borderRadius: 8,
+              background: C.accent, color: C.white, fontSize: 13,
+              fontWeight: 700, textDecoration: "none", letterSpacing: "0.01em",
+            }}
+          >
+            Request Your Instance →
+          </a>
+          <div style={{ color: C.textSec, fontSize: 11, marginTop: 14, lineHeight: 1.5 }}>
+            Custom deployments include AI analysis, file upload,<br />and a private URL for your team.
           </div>
         </div>
       </div>
@@ -878,36 +868,41 @@ function AboutTab({ onGetStarted }) {
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 function DropZone({ onFiles }) {
-  const [dragging, setDragging] = useState(false);
-  const inputRef = useRef();
-
-  const handle = useCallback(async (files) => {
-    const sheets = [];
-    for (const f of files) {
-      try { sheets.push(...(await parseFile(f))); } catch {}
-    }
-    if (sheets.length) onFiles(sheets);
-  }, [onFiles]);
+  // ── DEMO GATE ─────────────────────────────────────────────────────────────────
+  // File upload is disabled on the public preview instance. Visitors can explore
+  // all features using the sample data templates below. To upload real school data,
+  // a custom deployment is required — request one via the link below.
+  const CONTACT_URL = "https://rocklinconsult.netlify.app/#contact";
 
   return (
-    <div
-      onDragOver={e => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={e => { e.preventDefault(); setDragging(false); handle([...e.dataTransfer.files]); }}
-      onClick={() => inputRef.current.click()}
-      style={{
-        border: `2px dashed ${dragging ? C.accent : C.borderBlue}`,
-        borderRadius: 12, padding: "28px 16px", textAlign: "center",
-        cursor: "pointer", transition: "all .2s",
-        background: dragging ? "rgba(29,110,245,0.08)" : "rgba(255,255,255,0.03)",
-      }}
-    >
-      <input ref={inputRef} type="file" multiple accept=".xlsx,.xls,.csv,.tsv" style={{ display: "none" }}
-        onChange={e => handle([...e.target.files])} />
-      <div style={{ fontSize: 32, marginBottom: 8 }}>📁</div>
-      <div style={{ color: C.white, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Drop files here</div>
-      <div style={{ color: C.dim, fontSize: 12, marginBottom: 6 }}>or click to browse</div>
-      <div style={{ color: C.dimmer, fontSize: 11 }}>.xlsx · .xls · .csv · .tsv</div>
+    <div style={{
+      border: `2px dashed ${C.borderBlue}`,
+      borderRadius: 12, padding: "22px 16px", textAlign: "center",
+      background: "rgba(255,255,255,0.02)",
+    }}>
+      <div style={{ fontSize: 26, marginBottom: 8 }}>🔒</div>
+      <div style={{ color: C.white, fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+        File upload is disabled in this demo
+      </div>
+      <div style={{ color: C.dim, fontSize: 11, lineHeight: 1.6, marginBottom: 14 }}>
+        This is a public preview. To use Smart Records Hub with your own school data,
+        request a custom deployment — your data stays in your environment, not ours.
+      </div>
+      <a
+        href={CONTACT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-block", padding: "7px 16px", borderRadius: 8,
+          background: C.accent, color: C.white, fontSize: 12,
+          fontWeight: 700, textDecoration: "none", letterSpacing: "0.01em",
+        }}
+      >
+        Request Your Instance →
+      </a>
+      <div style={{ color: C.dimmer, fontSize: 10, marginTop: 10 }}>
+        Full support for .xlsx · .xls · .csv · .tsv in your deployment
+      </div>
     </div>
   );
 }
